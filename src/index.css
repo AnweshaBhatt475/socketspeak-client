@@ -1,0 +1,42 @@
+/* @import "tailwindcss";
+
+body {
+  @apply bg-purple-50 text-gray-800;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background-color: #F5F3FF;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: #EDE9FE;
+  border-radius: 9999px;
+}
+  */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  @apply bg-purple-50 text-gray-800;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background-color: #F5F3FF;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: #fee9ee;
+  border-radius: 9999px;
+}
