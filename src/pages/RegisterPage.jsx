@@ -48,7 +48,7 @@ const RegisterPage = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    const URL = `${import.meta.env.VITE_BACKEND_URL}api/register`;
+    const URL = `${import.meta.env.VITE_BACKEND_URL}/api/register`;
 
     const finalData = { ...data };
     if (!finalData.profile_pic) {
