@@ -12,14 +12,18 @@ const CheckPasswordPage = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.user); // ✅ Use user from Redux
+  const user = useSelector((state) => state.user);
 
-  // Redirect if required user data is not in location (during first visit)
+  // Fallback to localStorage user if Redux/Location is missing
+  const localUser = JSON.parse(localStorage.getItem('user')) || {};
+  const fallbackUser = user?._id ? user : location?.state || localUser;
+
   useEffect(() => {
-    if (!location?.state?._id || !location?.state?.name) {
+    // Redirect only if no fallback user found
+    if (!fallbackUser?._id || !fallbackUser?.name) {
       navigate('/email');
     }
-  }, [location, navigate]);
+  }, [fallbackUser, navigate]);
 
   const handleOnChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +42,7 @@ const CheckPasswordPage = () => {
       const response = await axios.post(
         URL,
         {
-          userId: location?.state?._id,
+          userId: fallbackUser._id,
           password: data.password
         },
         { withCredentials: true }
@@ -68,11 +72,11 @@ const CheckPasswordPage = () => {
           <Avatar
             width={70}
             height={70}
-            name={user?.name || location?.state?.name || "User"}
-            imageUrl={user?.profile_pic || location?.state?.profile_pic}
+            name={fallbackUser?.name || "User"}
+            imageUrl={fallbackUser?.profile_pic}
           />
           <h2 className='font-semibold text-lg mt-2 text-slate-800 text-center tracking-wide'>
-            {user?.name || location?.state?.name || "User"}
+            {fallbackUser?.name || "User"}
           </h2>
         </div>
 
