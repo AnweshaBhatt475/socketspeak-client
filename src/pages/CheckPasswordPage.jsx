@@ -1,117 +1,91 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import Avatar from '../components/Avatar';
-import { useDispatch, useSelector } from 'react-redux';
-import { setToken, setUser } from '../redux/userSlice';
+// CheckPasswordPage.jsx
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { setToken, setUser } from "../redux/userSlice";
+import socket from "../socket";
 
 const CheckPasswordPage = () => {
   const [data, setData] = useState({ password: "" });
+  const [error, setError] = useState("");
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.user);
+  const fallbackUser = location?.state?.user || JSON.parse(localStorage.getItem("user"));
 
-  // Fallback to localStorage user if Redux/Location is missing
-  const localUser = JSON.parse(localStorage.getItem('user')) || {};
-  const fallbackUser = user?._id ? user : location?.state || localUser;
-
-  useEffect(() => {
-    // Redirect only if no fallback user found
-    if (!fallbackUser?._id || !fallbackUser?.name) {
-      navigate('/email');
-    }
-  }, [fallbackUser, navigate]);
-
-  const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    setData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleChange = (e) => {
+    setData({ ...data, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const URL = `${import.meta.env.VITE_BACKEND_URL}/api/password`;
-
     try {
+      setError("");
+
       const response = await axios.post(
-        URL,
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/check-password`,
         {
-          userId: fallbackUser._id,
-          password: data.password
-        },
-        { withCredentials: true }
+          email: fallbackUser?.email,
+          password: data.password,
+        }
       );
 
-      toast.success(response.data.message || "Login successful");
-
       if (response.data.success) {
-        dispatch(setToken(response?.data?.token));
-        dispatch(setUser(response?.data?.user));
-        localStorage.setItem('token', response?.data?.token);
-        localStorage.setItem('user', JSON.stringify(response?.data?.user));
+        const { token, user } = response.data;
+
+        // Store in Redux
+        dispatch(setToken(token));
+        dispatch(setUser(user));
+
+        // Store in localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // ✅ Connect socket with token
+        socket.auth = { token };
+        socket.connect();
 
         setData({ password: "" });
-        navigate('/');
+        navigate("/");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error(error?.response?.data?.message || "Login failed");
+      setError(
+        error.response?.data?.message ||
+          error.response?.data ||
+          error.message
+      );
     }
   };
 
   return (
-    <div className='mt-5 px-4'>
-      <div className='bg-white w-full max-w-md rounded-xl overflow-hidden p-6 mx-auto shadow-md transition-all duration-150'>
-        <div className='w-fit mx-auto mb-4 flex justify-center items-center flex-col'>
-          <Avatar
-            width={70}
-            height={70}
-            name={fallbackUser?.name || "User"}
-            imageUrl={fallbackUser?.profile_pic}
-          />
-          <h2 className='font-semibold text-lg mt-2 text-slate-800 text-center tracking-wide'>
-            {fallbackUser?.name || "User"}
-          </h2>
-        </div>
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <form
+        className="bg-white p-6 rounded shadow-md w-80"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-xl font-semibold mb-4 text-center">Enter Password</h2>
 
-        <form className='grid gap-4 mt-3' onSubmit={handleSubmit}>
-          <div className='flex flex-col gap-1'>
-            <label htmlFor='password' className='text-sm font-medium text-slate-700'>
-              Password:
-            </label>
-            <input
-              type='password'
-              id='password'
-              name='password'
-              placeholder='Enter your password'
-              className='bg-slate-100 px-3 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-primary transition duration-150 ease-in-out'
-              value={data.password}
-              onChange={handleOnChange}
-              required
-              aria-label='Password input'
-            />
-          </div>
+        <input
+          type="password"
+          name="password"
+          value={data.password}
+          onChange={handleChange}
+          placeholder="Password"
+          className="w-full px-4 py-2 border rounded mb-4"
+          required
+        />
 
-          <button
-            type='submit'
-            className='bg-primary text-lg px-4 py-2 rounded mt-2 font-bold text-white tracking-wide transition-transform duration-200 hover:bg-secondary hover:scale-[1.02]'
-          >
-            Login
-          </button>
-        </form>
+        {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
 
-        <p className='my-3 text-center text-sm'>
-          <Link to={"/forgot-password"} className='hover:text-primary font-semibold transition duration-150'>
-            Forgot password?
-          </Link>
-        </p>
-      </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+        >
+          Submit
+        </button>
+      </form>
     </div>
   );
 };
